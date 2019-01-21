@@ -1,1 +1,4 @@
-3D game with models and physics (like vr chat but cross platform and ultra high performance)
+3D game with gltf or obj models and physics (like vr chat but cross platform and ultra high performance)
+
+More info on 3d model formats here:
+https://godotengine.org/article/we-should-all-use-gltf-20-export-3d-assets-game-engines

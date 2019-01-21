@@ -1,1 +1,4 @@
-renders models in 3d space using .obj models, .mtl texture maps, and .max rigging
+renders models in 3d space using gltf or .obj models, .mtl texture maps, and .max rigging
+
+More info on 3d model formats here:
+https://godotengine.org/article/we-should-all-use-gltf-20-export-3d-assets-game-engines

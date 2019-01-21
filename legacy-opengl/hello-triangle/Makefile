@@ -1,13 +1,28 @@
-RM = rm -f
-ifdef OS
-	RM = del /Q
-endif
+#awesome example here: https://codereview.stackexchange.com/questions/78855/makefile-for-c-opengl-with-glfw-and-glad
+#and here: https://stackoverflow.com/questions/5178125/how-to-place-object-files-in-separate-subdirectory
 
-hello-triangle: main.o
-	g++ build/main.o -o bin/hello-triangle
+CC = g++
 
-main.o: src/main.cpp
-	g++ -c src/main.cpp -o build/main.o
+glfw = ../../dependencies/glfw-3.2
+glfw_inc = $(glfw)/include
+glfw_lib = $(glfw)/lib64
 
-clean:
-	$(RM) "build/\*.o"  "bin/\*"
+INCLUDES = -I$(glfw_inc)
+LIBRARIES = -L$(glfw_lib)
+
+#compile flags and link flags
+CFLAGS = -Wall -ggdb3 -Og $(INCLUDES)
+LDFLAGS = -lglfw3 -lopengl32 -lgdi32 $(LIBRARIES)
+
+TARGET = main
+cpp_files = src/main.cpp
+objects = $(patsubst src/%,build/%,$(cpp_files:.cpp=.o))
+headers = 
+
+all: $(TARGET)
+
+$(TARGET): $(objects) 
+	$(CC) -o bin/$@ $^ $(LDFLAGS) 
+
+$(objects): build/%.o: src/%.cpp $(headers) makefile
+	$(CC) $(CFLAGS) -c -o $@ $<
