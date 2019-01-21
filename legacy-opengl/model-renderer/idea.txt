@@ -1,0 +1,1 @@
+renders models in 3d space using .obj models, .mtl texture maps, and .max rigging
