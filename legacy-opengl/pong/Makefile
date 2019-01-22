@@ -13,7 +13,7 @@ LIBRARIES = -L$(glfw_lib)
 CPPFLAGS = -Wall -ggdb3 -Og $(INCLUDES)
 LDFLAGS = -lglfw3 -lopengl32 -lgdi32 $(LIBRARIES)
 
-TARGET = hello-triangle
+TARGET = pong
 cpp_files = src/main.cpp
 objects = $(patsubst src/%,build/%,$(cpp_files:.cpp=.o))
 headers = 
