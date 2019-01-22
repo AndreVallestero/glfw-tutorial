@@ -3,15 +3,20 @@
 
 CC = g++
 
-glfw = ../../dependencies/glfw-3.2
-glfw_inc = $(glfw)/include
-glfw_lib = $(glfw)/lib64
+#glfw = ../../dependencies/glfw-3.2
+#glfw_inc = $(glfw)/include
+#glfw_lib = $(glfw)/lib64
+
+glfw_inc = /usr/include
+glfw_lib = /usr/lib
 
 INCLUDES = -I$(glfw_inc)
 LIBRARIES = -L$(glfw_lib)
 
+
 CPPFLAGS = -Wall -ggdb3 -Og $(INCLUDES)
-LDFLAGS = -lglfw3 -lopengl32 -lgdi32 $(LIBRARIES)
+#LDFLAGS = -lglfw3 -lopengl32 -lgdi32 $(LIBRARIES)
+LDFLAGS = -lglfw -lGL $(LIBRARIES)
 
 TARGET = hello-triangle
 cpp_files = src/main.cpp
@@ -23,5 +28,8 @@ all: $(TARGET)
 $(TARGET): $(objects) 
 	$(CC) -o bin/$@ $^ $(LDFLAGS) 
 
-$(objects): build/%.o: src/%.cpp $(headers) makefile
+$(objects): build/%.o: src/%.cpp $(headers) Makefile
 	$(CC) $(CPPFLAGS) -c -o $@ $<
+
+clean:
+	$(RM) bin/$(TARGET) $(objects)
