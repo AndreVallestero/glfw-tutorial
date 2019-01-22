@@ -12,8 +12,6 @@ int main(void) {
 	GLFWwindow* window = glfwCreateWindow(640, 480, "pong", NULL, NULL);
 	glfwMakeContextCurrent(window);
 	
-
-	
 	float ratio;
 	int width, height;
 	while (!glfwWindowShouldClose(window)) {
