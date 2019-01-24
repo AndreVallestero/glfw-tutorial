@@ -17,16 +17,15 @@
 
 class Paddle {
     public:
-
         void draw(void);
         void update(double);
-        void key_handler(int, int);
+        int key_handler(int, int);
 
         Paddle(float, int, int);
 
     private:
         float width = 0.025f, height = 0.2f;
-        float speed = 1.f / 3; // Take 3 seconds to go from top of screen to bot;
+        float speed = 2.f / 3; // Take 3 seconds to go from top of screen to bot;
         float posX, posY = 0 - height / 2;
 
         int moveDownKeyState = 0, moveUpKeyState = 0;
@@ -39,7 +38,7 @@ Paddle::Paddle(float posXStart, int upKeyId, int downKeyId) {
 }
 
 void Paddle::update(double timeDelta) {
-    posY += moveUpKeyState + moveDownKeyState * speed * timeDelta;
+    posY += (moveUpKeyState - moveDownKeyState) * speed * timeDelta;
 }
 
 void Paddle::draw(void) {
@@ -53,10 +52,14 @@ void Paddle::draw(void) {
 
 // Returns true if key is handled to stop other instances from wasting time
 int Paddle::key_handler(int key, int action) {
-    if (key == upKey)
-        moveUpKeyState = action == GLFW_PRESS;
-    else if (key == downKey)
-        moveDownKeyState = action == GLFW_PRESS;
+    if (key == upKey && action == GLFW_PRESS)
+        moveUpKeyState = true;
+    else if (key == upKey && action == GLFW_RELEASE)
+        moveUpKeyState = false;
+    else if (key == downKey && action == GLFW_PRESS)
+        moveDownKeyState = true;
+    else if (key == downKey && action == GLFW_RELEASE)
+        moveDownKeyState = false;
     else 
         return false;
     return true;
@@ -103,12 +106,16 @@ void Ball::draw(void) {
 		y *= RAD_FACT;
     }
     glEnd();
-
 }
 
-void update(double, Paddle, Paddle, Ball);
-void draw(Paddle, Paddle, Ball);
+void update(double);
+void draw();
 void reset();
+void key_callback(GLFWwindow*, int, int, int, int);
+
+Paddle* leftPaddle = 0;
+Paddle* rightPaddle = 0;
+Ball ball;
 
 int main(void) {
     glfwInit();
@@ -116,23 +123,19 @@ int main(void) {
 	glfwMakeContextCurrent(window);
     glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
     glfwSetKeyCallback(window, key_callback);
-
 	int width, height;
     int score_left = 0, score_right = 0;
     double loopTimePrev = glfwGetTime();
 
-    Paddle left_paddle = Paddle(-0.8f, GLFW_KEY_Q, GLFW_KEY_A);
-    Paddle right_paddle = Paddle(0.8f, GLFW_KEY_P, GLFW_KEY_L);
-    Ball ball;
+    leftPaddle = new Paddle(-0.8f, GLFW_KEY_Q, GLFW_KEY_A);
+    rightPaddle = new Paddle(0.8f, GLFW_KEY_P, GLFW_KEY_L);
 
 	while (!glfwWindowShouldClose(window)) {
         double loopTimeNow = glfwGetTime();
         double loopTimeDelta = loopTimeNow - loopTimePrev;
         loopTimePrev = loopTimeNow;
 
-        std::cout << "FPS: " << 1 / loopTimeDelta << std::endl;
-
-        glClear(GL_COLOR_BUFFER_BIT);
+        //std::cout << "FPS: " << 1 / loopTimeDelta << std::endl;
 		
         glfwGetFramebufferSize(window, &width, &height);
         float ratio = width / (float) height;
@@ -146,8 +149,8 @@ int main(void) {
         glDisable(GL_DEPTH_TEST);
         glMatrixMode(GL_MODELVIEW);
 		
-        update(loopTimeDelta, left_paddle, right_paddle, ball);
-        draw(left_paddle, right_paddle, ball);
+        update(loopTimeDelta);
+        draw();
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -158,15 +161,20 @@ int main(void) {
     return 0;
 }
 
-void update(double timeDelta, Paddle left_paddle, Paddle right_paddle, Ball ball) {
-    left_paddle.update(timeDelta);
-    right_paddle.update(timeDelta);
+void update(double timeDelta) {
+    (*leftPaddle).update(timeDelta);
+    (*rightPaddle).update(timeDelta);
     ball.update(timeDelta);
 }
 
-void draw(Paddle left_paddle, Paddle right_paddle, Ball ball) {
-    glColor3i(1, 1, 1);
-    left_paddle.draw();
-    right_paddle.draw();
+void draw() {
+    (*leftPaddle).draw();
+    (*rightPaddle).draw();
     ball.draw();
+}
+
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if(!(*leftPaddle).key_handler(key, action))
+        (*rightPaddle).key_handler(key, action);
 }
