@@ -17,23 +17,25 @@
 
 class Paddle {
     public:
-        int moveDownKeyState = 0;
-        int moveUpKeyState = 0;
 
         void draw(void);
         void update(double);
+        void key_handler(int, int);
 
-        Paddle(float);
+        Paddle(float, int, int);
 
     private:
         float width = 0.025f, height = 0.2f;
         float speed = 1.f / 3; // Take 3 seconds to go from top of screen to bot;
-
         float posX, posY = 0 - height / 2;
+
+        int moveDownKeyState = 0, moveUpKeyState = 0;
+        int upKey, downKey;
 };
 
-Paddle::Paddle(float posXStart) {
+Paddle::Paddle(float posXStart, int upKeyId, int downKeyId) {
     posX = posXStart + width / 2;
+    upKey = upKeyId, downKey = downKeyId;
 }
 
 void Paddle::update(double timeDelta) {
@@ -47,6 +49,17 @@ void Paddle::draw(void) {
     glVertex2f(posX + width, posY + height);
     glVertex2f(posX, posY + height);
     glEnd();
+}
+
+// Returns true if key is handled to stop other instances from wasting time
+int Paddle::key_handler(int key, int action) {
+    if (key == upKey)
+        moveUpKeyState = action == GLFW_PRESS;
+    else if (key == downKey)
+        moveDownKeyState = action == GLFW_PRESS;
+    else 
+        return false;
+    return true;
 }
 
 class Ball {
@@ -102,13 +115,14 @@ int main(void) {
 	GLFWwindow* window = glfwCreateWindow(640, 360, "pong", NULL, NULL);
 	glfwMakeContextCurrent(window);
     glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
+    glfwSetKeyCallback(window, key_callback);
 
 	int width, height;
     int score_left = 0, score_right = 0;
     double loopTimePrev = glfwGetTime();
 
-    Paddle left_paddle = Paddle(-0.8f);
-    Paddle right_paddle = Paddle(0.8f);
+    Paddle left_paddle = Paddle(-0.8f, GLFW_KEY_Q, GLFW_KEY_A);
+    Paddle right_paddle = Paddle(0.8f, GLFW_KEY_P, GLFW_KEY_L);
     Ball ball;
 
 	while (!glfwWindowShouldClose(window)) {
