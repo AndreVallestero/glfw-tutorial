@@ -25,8 +25,8 @@ class Paddle {
         Paddle(float, float, int, int);
 
     private:
-        float width, height = 0.2f;
-        float speed = 2.f / 3; // Take 3 seconds to go from top of screen to bot;
+        float width, height = 0.15f;
+        float speed = 2.f / 1; // Take 1 seconds to go from top of screen to bot;
         float posX, posY = 0 - height / 2;
 
         int moveDownKeyState = 0, moveUpKeyState = 0;
@@ -74,9 +74,9 @@ class Ball {
 
     private:
         const float START_X = 0, START_Y = 0;
-        const float RADIUS = 0.05;
+        const float RADIUS = 0.02;
 
-        // Number of Segments to use for drawing, 12 is highly divisible, looks good.
+        // Number of Segments to use for drawing, 48 is highly divisible, looks good.
         const int DRAW_SEGMENTS = 12;
 
         // tan and cos of the angle between the Segments
@@ -126,14 +126,14 @@ int main(void) {
     glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
     glfwSetKeyCallback(window, key_callback);
 
-    float targetDispRatio = 16/9.f;
+    float targetDispRatio = 4/3.f;
 	int width, height;
     int score_left = 0, score_right = 0;
     double loopTimePrev = glfwGetTime();
 
-    float paddleWidth = 0.025;
-    leftPaddle = new Paddle(-targetDispRatio, paddleWidth, GLFW_KEY_Q, GLFW_KEY_A);
-    rightPaddle = new Paddle(targetDispRatio - paddleWidth, paddleWidth, GLFW_KEY_P, GLFW_KEY_L);
+    float paddleWidth = 0.02f;
+    leftPaddle = new Paddle(-1.f, paddleWidth, GLFW_KEY_Q, GLFW_KEY_A);
+    rightPaddle = new Paddle(1.f - paddleWidth, paddleWidth, GLFW_KEY_P, GLFW_KEY_L);
 
 	while (!glfwWindowShouldClose(window)) {
         double loopTimeNow = glfwGetTime();
