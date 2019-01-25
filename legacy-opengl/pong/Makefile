@@ -3,19 +3,23 @@
 
 CC = g++
 
-#glfw = ../../dependencies/glfw-3.2	# windows
-#glfw_inc = $(glfw)/include			# windows
-#glfw_lib = $(glfw)/lib64			# windows
+# Block below for windows
+#glfw = ../../dependencies/glfw-3.2
+#glfw_inc = $(glfw)/include
+#glfw_lib = $(glfw)/lib64
 
-glfw_inc = /usr/include				# linux
-glfw_lib = /usr/lib					# linux
+glfw_inc = /usr/include
+glfw_lib = /usr/lib
 
 INCLUDES = -I$(glfw_inc)
 LIBRARIES = -L$(glfw_lib)
 
 CPPFLAGS = -Wall -ggdb3 -Og $(INCLUDES)
-#LDFLAGS = -lglfw3 -lopengl32 -lgdi32 $(LIBRARIES)	# window
-LDFLAGS = -lglfw -lGL $(LIBRARIES)					# linux
+
+# Line below for windows
+#LDFLAGS = -lglfw3 -lopengl32 -lgdi32 $(LIBRARIES)
+
+LDFLAGS = -lglfw -lGL $(LIBRARIES)
 
 TARGET = pong
 cpp_files = src/main.cpp
