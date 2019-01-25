@@ -18,6 +18,10 @@
 
 class Paddle {
     public:
+        float width, height = 0.15f;
+        float posX, posY = 0 - height / 2;
+        float outBoundRad; // outter bounding radius
+        float inBoundRad; // inner bounding radius
 
         void draw(void);
         void update(double);
@@ -26,9 +30,7 @@ class Paddle {
         Paddle(float, float, int, int);
 
     private:
-        float width, height = 0.15f;
         float speed = 2.f / 1; // Take 1 seconds to go from top of screen to bot;
-        float posX, posY = 0 - height / 2;
 
         int moveDownKeyState = 0, moveUpKeyState = 0;
         int upKey, downKey;
@@ -38,6 +40,9 @@ Paddle::Paddle(float posXStart, float widthStart, int upKeyId, int downKeyId) {
     posX = posXStart;
     upKey = upKeyId, downKey = downKeyId;
     width = widthStart;
+
+    inBoundRad = ((width < height) ? width : height) / 2.0;
+    outBoundRad = sqrt(pow(width / 2 + height / 2, 2));
 }
 
 void Paddle::update(double timeDelta) {
@@ -71,9 +76,10 @@ int Paddle::key_handler(int key, int action) {
 class Ball {
     public:
         void draw(void);
-        void update(double);
+        void update(double, Paddle*, Paddle*);
         void start(void);
         void reset(void);
+        int collides(Paddle*);
 
         Ball(float);
     private:
@@ -98,7 +104,7 @@ Ball::Ball(float boundaryX) {
     boundary = boundaryX;
 }
 
-void Ball::update(double timeDelta) {
+void Ball::update(double timeDelta, Paddle* leftPaddle, Paddle* rightPaddle) {
     posX += velX * timeDelta;
     posY += velY * timeDelta;
 
@@ -108,6 +114,14 @@ void Ball::update(double timeDelta) {
     } else if (posY - RADIUS >= 1) {
         velY = -velY;
         posY = 2 - posY;
+    } else if (collides(leftPaddle)) {
+        Paddle paddle = *leftPaddle;
+        velX = -velX;
+        posX = -(paddle.posX + paddle.width)  - posX;
+    }  else if (collides(rightPaddle)) {
+        Paddle paddle = *rightPaddle;
+        velX = -velX;
+        posX = paddle.posX - posX;
     } else if (posX + RADIUS <= -boundary) 
         reset();
     else if (posX - RADIUS >= boundary)
@@ -140,6 +154,36 @@ void Ball::start(void) {
 void Ball::reset(void) {
     posX = 0.f, posY = 0.f,
     velX = 0.f, velY = 0.f;
+}
+
+int Ball::collides(Paddle* pPaddle) {
+    Paddle paddle = (*pPaddle);
+    float paddleCenX = paddle.posX + paddle.width / 2;
+    float paddleCenY = paddle.posY + paddle.height / 2;
+    float distDeltaX = paddleCenX - posX;
+    float distDeltaY = paddleCenY - posY;
+    float distDeltaSq = pow(distDeltaX, 2) + pow(distDeltaY, 2);
+
+    // Distance is longer than radius and paddle outer bound
+    if (distDeltaSq > paddle.outBoundRad + RADIUS)
+        return false;
+    else if (distDeltaSq < paddle.inBoundRad + RADIUS)
+        return true;
+    else {
+        float distDelta = sqrt(distDeltaSq);
+        // Create a unit vector by dividing components by magnitude of vector
+        // then multiply it by the radius to get the point closest to the paddle
+        float ballClosestPointX = distDeltaX / distDelta * RADIUS;
+        float ballClosestPointY = distDeltaY / distDelta * RADIUS;
+
+        // Check if point is in paddle rectangle
+        if(ballClosestPointX > paddle.posX &&
+            ballClosestPointX < paddle.posX + paddle.width &&
+            ballClosestPointY > paddle.posY &&
+            ballClosestPointY < paddle.posY + paddle.height)
+            return true;
+    }
+    return false;
 }
 
 void update(double);
@@ -214,7 +258,7 @@ int main(void) {
 void update(double timeDelta) {
     (*leftPaddle).update(timeDelta);
     (*rightPaddle).update(timeDelta);
-    (*ball).update(timeDelta);
+    (*ball).update(timeDelta, leftPaddle, rightPaddle);
 }
 
 void draw(float dispRatio) {
