@@ -72,11 +72,13 @@ class Ball {
     public:
         void draw(void);
         void update(double);
-        void start();
+        void start(void);
+        void reset(void);
 
+        Ball(float);
     private:
-        const float START_X = 0, START_Y = 0;
         const float RADIUS = 0.02;
+        const float START_SPEED = 1.f;
 
         // Number of Segments to use for drawing, 48 is highly divisible, looks good.
         const int DRAW_SEGMENTS = 48;
@@ -88,11 +90,28 @@ class Ball {
 
         float posX = 0, posY = 0;
         float velX = 0, velY = 0;
+        
+        float boundary;
 };
+
+Ball::Ball(float boundaryX) {
+    boundary = boundaryX;
+}
 
 void Ball::update(double timeDelta) {
     posX += velX * timeDelta;
     posY += velY * timeDelta;
+
+    if (posY + RADIUS <= -1) {
+        velY = -velY;
+        posY = -2 - posY;
+    } else if (posY - RADIUS >= 1) {
+        velY = -velY;
+        posY = 2 - posY;
+    } else if (posX + RADIUS <= -boundary) 
+        reset();
+    else if (posX - RADIUS >= boundary)
+        reset();
 }
 
 // Optimized circle from http://slabode.exofire.net/circle_draw.shtml
@@ -112,10 +131,15 @@ void Ball::draw(void) {
     glEnd();
 }
 
-void Ball::start() {
+void Ball::start(void) {
     // Ball is not moving
     if(!velX && !velY)
         velX = (rand() & 2) - 1; // 50/50 left or right by masking the '2' bit which could have value of 0 or 2
+}
+
+void Ball::reset(void) {
+    posX = 0.f, posY = 0.f,
+    velX = 0.f, velY = 0.f;
 }
 
 void update(double);
@@ -125,7 +149,7 @@ void key_callback(GLFWwindow*, int, int, int, int);
 
 Paddle* leftPaddle = 0;
 Paddle* rightPaddle = 0;
-Ball ball;
+Ball* ball = 0;
 
 int main(void) {
     srand(time(0));
@@ -144,13 +168,19 @@ int main(void) {
     float paddleWidth = 0.02f;
     leftPaddle = new Paddle(-1.f, paddleWidth, GLFW_KEY_Q, GLFW_KEY_A);
     rightPaddle = new Paddle(1.f - paddleWidth, paddleWidth, GLFW_KEY_P, GLFW_KEY_L);
+    ball = new Ball(targetDispRatio);
+
+    double nextFpsUpdateTime = 0.;
 
 	while (!glfwWindowShouldClose(window)) {
         double loopTimeNow = glfwGetTime();
         double loopTimeDelta = loopTimeNow - loopTimePrev;
         loopTimePrev = loopTimeNow;
 
-        //std::cout << "FPS: " << 1 / loopTimeDelta << std::endl;
+        if(loopTimeNow >= nextFpsUpdateTime) {
+            std::cout << "FPS: " << 1 / loopTimeDelta << std::endl;
+            nextFpsUpdateTime = loopTimeNow + 1;
+        }
 		
         glfwGetFramebufferSize(window, &width, &height);
         float actualDispRatio = width / (float) height;
@@ -184,7 +214,7 @@ int main(void) {
 void update(double timeDelta) {
     (*leftPaddle).update(timeDelta);
     (*rightPaddle).update(timeDelta);
-    ball.update(timeDelta);
+    (*ball).update(timeDelta);
 }
 
 void draw(float dispRatio) {
@@ -200,18 +230,18 @@ void draw(float dispRatio) {
 
     (*leftPaddle).draw();
     (*rightPaddle).draw();
-    ball.draw();
+    (*ball).draw();
 }
 
 void reset(void) {
-
+    (*ball).reset();
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
     if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
-        ball.start();
-    else if (key == GLFW_KEY_R && action == GLFW_PRESS);
-        //ball.reset();
+        (*ball).start();
+    else if (key == GLFW_KEY_R && action == GLFW_PRESS)
+        reset();
     else if (key == GLFW_KEY_F11 && action == GLFW_PRESS) {
         int buffW, buffH;
         GLFWmonitor* primMon = glfwGetPrimaryMonitor();
