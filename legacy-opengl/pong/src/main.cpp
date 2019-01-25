@@ -168,13 +168,24 @@ void update(double timeDelta) {
 }
 
 void draw() {
+    // Draw arena
+    glColor3i(0, 0, 0);
+    glBegin(GL_QUADS);
+    glVertex2f(-0.9f, -0.9);
+    glVertex2f(0.9f, -0.9f);
+    glVertex2f(0.9f, 0.9f);
+    glVertex2f(-0.9f, 0.9f);
+    glEnd();
+    glColor3f(1.0f, 1.0f, 1.0f);
+
     (*leftPaddle).draw();
     (*rightPaddle).draw();
     ball.draw();
 }
 
-void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
-{
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if(key == GLFW_KEY_SPACE)
+
     if(!(*leftPaddle).key_handler(key, action))
         (*rightPaddle).key_handler(key, action);
 }
