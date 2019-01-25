@@ -13,6 +13,7 @@
 
 #include <GLFW/glfw3.h>
 #include <math.h>
+#include <ctime>
 #include <iostream>
 
 class Paddle {
@@ -71,13 +72,14 @@ class Ball {
     public:
         void draw(void);
         void update(double);
+        void start();
 
     private:
         const float START_X = 0, START_Y = 0;
         const float RADIUS = 0.02;
 
         // Number of Segments to use for drawing, 48 is highly divisible, looks good.
-        const int DRAW_SEGMENTS = 12;
+        const int DRAW_SEGMENTS = 48;
 
         // tan and cos of the angle between the Segments
         // 6.28318530718 is 2 * PI, the degree to radian conversion
@@ -110,9 +112,15 @@ void Ball::draw(void) {
     glEnd();
 }
 
+void Ball::start() {
+    // Ball is not moving
+    if(!velX && !velY)
+        velX = (rand() & 2) - 1; // 50/50 left or right by masking the '2' bit which could have value of 0 or 2
+}
+
 void update(double);
 void draw(float);
-void reset();
+void reset(void);
 void key_callback(GLFWwindow*, int, int, int, int);
 
 Paddle* leftPaddle = 0;
@@ -120,6 +128,8 @@ Paddle* rightPaddle = 0;
 Ball ball;
 
 int main(void) {
+    srand(time(0));
+
     glfwInit();
 	GLFWwindow* window = glfwCreateWindow(640, 360, "pong", NULL, NULL);
 	glfwMakeContextCurrent(window);
@@ -193,9 +203,25 @@ void draw(float dispRatio) {
     ball.draw();
 }
 
+void reset(void) {
+
+}
+
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if (key == GLFW_KEY_SPACE);
-    else if (key == GLFW_KEY_R);
-    else if (!(*leftPaddle).key_handler(key, action))
+    if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
+        ball.start();
+    else if (key == GLFW_KEY_R && action == GLFW_PRESS);
+        //ball.reset();
+    else if (key == GLFW_KEY_F11 && action == GLFW_PRESS) {
+        int buffW, buffH;
+        GLFWmonitor* primMon = glfwGetPrimaryMonitor();
+        const GLFWvidmode* mode = glfwGetVideoMode(primMon);
+        glfwGetFramebufferSize(window, &buffW, &buffH);
+
+        if(buffW == mode->width && buffH == mode->height)
+            glfwSetWindowMonitor(window, NULL, 0, 0, 640, 480, GLFW_DONT_CARE);
+        else
+            glfwSetWindowMonitor(window, primMon, 0, 0, mode->width, mode->height, mode->refreshRate);
+    } else if (!(*leftPaddle).key_handler(key, action))
         (*rightPaddle).key_handler(key, action);
 }
