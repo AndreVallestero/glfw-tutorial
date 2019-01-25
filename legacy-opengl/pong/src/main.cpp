@@ -4,7 +4,7 @@
  * https://github.com/jakesgordon/javascript-pong/blob/master/pong.js
  * https://www.glfw.org/docs/3.0/quick.html
  * 
- * Display 16x9
+ * disp 16x9
  * black play area
  * white paddles
  * qa, pl are paddle controls, r to restart, f11 for full screen
@@ -17,14 +17,15 @@
 
 class Paddle {
     public:
+
         void draw(void);
         void update(double);
         int key_handler(int, int);
 
-        Paddle(float, int, int);
+        Paddle(float, float, int, int);
 
     private:
-        float width = 0.025f, height = 0.2f;
+        float width, height = 0.2f;
         float speed = 2.f / 3; // Take 3 seconds to go from top of screen to bot;
         float posX, posY = 0 - height / 2;
 
@@ -32,9 +33,10 @@ class Paddle {
         int upKey, downKey;
 };
 
-Paddle::Paddle(float posXStart, int upKeyId, int downKeyId) {
-    posX = posXStart + width / 2;
+Paddle::Paddle(float posXStart, float widthStart, int upKeyId, int downKeyId) {
+    posX = posXStart;
     upKey = upKeyId, downKey = downKeyId;
+    width = widthStart;
 }
 
 void Paddle::update(double timeDelta) {
@@ -109,7 +111,7 @@ void Ball::draw(void) {
 }
 
 void update(double);
-void draw();
+void draw(float);
 void reset();
 void key_callback(GLFWwindow*, int, int, int, int);
 
@@ -123,12 +125,15 @@ int main(void) {
 	glfwMakeContextCurrent(window);
     glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
     glfwSetKeyCallback(window, key_callback);
+
+    float targetDispRatio = 16/9.f;
 	int width, height;
     int score_left = 0, score_right = 0;
     double loopTimePrev = glfwGetTime();
 
-    leftPaddle = new Paddle(-0.8f, GLFW_KEY_Q, GLFW_KEY_A);
-    rightPaddle = new Paddle(0.8f, GLFW_KEY_P, GLFW_KEY_L);
+    float paddleWidth = 0.025;
+    leftPaddle = new Paddle(-targetDispRatio, paddleWidth, GLFW_KEY_Q, GLFW_KEY_A);
+    rightPaddle = new Paddle(targetDispRatio - paddleWidth, paddleWidth, GLFW_KEY_P, GLFW_KEY_L);
 
 	while (!glfwWindowShouldClose(window)) {
         double loopTimeNow = glfwGetTime();
@@ -138,19 +143,24 @@ int main(void) {
         //std::cout << "FPS: " << 1 / loopTimeDelta << std::endl;
 		
         glfwGetFramebufferSize(window, &width, &height);
-        float ratio = width / (float) height;
+        float actualDispRatio = width / (float) height;
 
         glViewport(0, 0, width, height);
         glClear(GL_COLOR_BUFFER_BIT);
 
         glMatrixMode(GL_PROJECTION);
         glLoadIdentity();
-        glOrtho(-ratio, ratio, -1.f, 1.f, 1.f, -1.f);
+
+        if(actualDispRatio < targetDispRatio)
+            glOrtho(-targetDispRatio, targetDispRatio, -targetDispRatio/actualDispRatio, targetDispRatio/actualDispRatio, 1.f, -1.f);
+        else
+            glOrtho(-actualDispRatio, actualDispRatio, -1.f, 1.f, 1.f, -1.f);
+        
         glDisable(GL_DEPTH_TEST);
         glMatrixMode(GL_MODELVIEW);
 		
         update(loopTimeDelta);
-        draw();
+        draw(targetDispRatio);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -167,14 +177,14 @@ void update(double timeDelta) {
     ball.update(timeDelta);
 }
 
-void draw() {
+void draw(float dispRatio) {
     // Draw arena
     glColor3i(0, 0, 0);
     glBegin(GL_QUADS);
-    glVertex2f(-0.9f, -0.9);
-    glVertex2f(0.9f, -0.9f);
-    glVertex2f(0.9f, 0.9f);
-    glVertex2f(-0.9f, 0.9f);
+    glVertex2f(-dispRatio, -1.0f);
+    glVertex2f(dispRatio, -1.0f);
+    glVertex2f(dispRatio, 1.0f);
+    glVertex2f(-dispRatio, 1.0f);
     glEnd();
     glColor3f(1.0f, 1.0f, 1.0f);
 
@@ -184,8 +194,8 @@ void draw() {
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
-    if(key == GLFW_KEY_SPACE)
-
-    if(!(*leftPaddle).key_handler(key, action))
+    if (key == GLFW_KEY_SPACE);
+    else if (key == GLFW_KEY_R);
+    else if (!(*leftPaddle).key_handler(key, action))
         (*rightPaddle).key_handler(key, action);
 }
