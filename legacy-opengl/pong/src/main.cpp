@@ -219,7 +219,7 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
         glfwGetFramebufferSize(window, &buffW, &buffH);
 
         if(buffW == mode->width && buffH == mode->height)
-            glfwSetWindowMonitor(window, NULL, 0, 0, 640, 480, GLFW_DONT_CARE);
+            glfwSetWindowMonitor(window, NULL, 64, 64, 640, 480, GLFW_DONT_CARE);
         else
             glfwSetWindowMonitor(window, primMon, 0, 0, mode->width, mode->height, mode->refreshRate);
     } else if (!(*leftPaddle).key_handler(key, action))
