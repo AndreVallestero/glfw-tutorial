@@ -3,20 +3,19 @@
 
 CC = g++
 
-#glfw = ../../dependencies/glfw-3.2
-#glfw_inc = $(glfw)/include
-#glfw_lib = $(glfw)/lib64
-
-glfw_inc = /usr/include
-glfw_lib = /usr/lib
-
-INCLUDES = -I$(glfw_inc)
-LIBRARIES = -L$(glfw_lib)
-
+dep_path = ../../dependencies
+INCLUDES = -I$(dep_path)/include
+LIBRARIES = -L$(dep_path)/lib
 
 CPPFLAGS = -Wall -ggdb3 -Og $(INCLUDES)
-#LDFLAGS = -lglfw3 -lopengl32 -lgdi32 $(LIBRARIES)
-LDFLAGS = -lglfw -lGL $(LIBRARIES)
+
+# Windows
+ifdef OS
+	LDFLAGS = -lglfw3 -lopengl32 -lgdi32 $(LIBRARIES)
+# Linux
+else
+	LDFLAGS = -lglfw -lGL $(LIBRARIES)
+endif
 
 TARGET = hello-triangle
 cpp_files = src/main.cpp

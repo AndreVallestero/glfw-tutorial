@@ -3,27 +3,21 @@
 
 CC = g++
 
-# Block below for Windows only
-#glfw = ../../dependencies/glfw-3.2
-#glfw_inc = $(glfw)/include
-#glfw_lib = $(glfw)/lib64
-
-# Block below for Linux only
-glfw_inc = /usr/include
-glfw_lib = /usr/lib
-
-INCLUDES = -I$(glfw_inc)
-LIBRARIES = -L$(glfw_lib)
+dep_path = ../../dependencies
+INCLUDES = -I$(dep_path)/include
+LIBRARIES = -L$(dep_path)/lib
 
 CPPFLAGS = -Wall -ggdb3 -Og $(INCLUDES)
 
-# Line below for Windows only
-#LDFLAGS = -lglfw3 -lopengl32 -lgdi32 $(LIBRARIES)
+# Windows
+ifdef OS
+	LDFLAGS = -lglfw3 -lopengl32 -lgdi32 $(LIBRARIES)
+# Linux
+else
+	LDFLAGS = -lglfw -lGL $(LIBRARIES)
+endif
 
-# Line below for Linux only
-LDFLAGS = -lglfw -lGL $(LIBRARIES)
-
-TARGET = pong
+TARGET = hello-triangle
 cpp_files = src/main.cpp
 objects = $(patsubst src/%,build/%,$(cpp_files:.cpp=.o))
 headers = 

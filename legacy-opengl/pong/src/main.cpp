@@ -16,6 +16,26 @@
 #include <ctime>
 #include <iostream>
 
+void draw_circle(float posX, float posY, float radius) {
+    const int DRAW_SEGMENTS = 48;
+    const float TAN_FACT = tanf(6.28318530718f / DRAW_SEGMENTS);
+    const float RAD_FACT = cosf(6.28318530718f / DRAW_SEGMENTS);
+
+    float x = radius, y = 0;
+
+    glBegin(GL_LINE_LOOP);
+    for (int i = 0; i < DRAW_SEGMENTS; ++i) {
+        glVertex2f(posX + x, posY + y);
+		float tx = -y; 
+		float ty = x;
+		x += tx * TAN_FACT; 
+		y += ty * TAN_FACT;
+		x *= RAD_FACT; 
+		y *= RAD_FACT;
+    }
+    glEnd();
+}
+
 class Paddle {
     public:
         float width, height = 0.15f;
@@ -47,6 +67,8 @@ Paddle::Paddle(float posXStart, float widthStart, int upKeyId, int downKeyId) {
 
 void Paddle::update(double timeDelta) {
     posY += (moveUpKeyState - moveDownKeyState) * speed * timeDelta;
+    if(posY > 1 - height) posY = 1 - height;
+    else if (posY < -1) posY = -1;
 }
 
 void Paddle::draw(void) {
@@ -117,11 +139,11 @@ void Ball::update(double timeDelta, Paddle* leftPaddle, Paddle* rightPaddle) {
     } else if (collides(leftPaddle)) {
         Paddle paddle = *leftPaddle;
         velX = -velX;
-        posX = -(paddle.posX + paddle.width)  - posX;
+        posX = 2 * (paddle.posX + paddle.width) - posX + 2 * RADIUS;
     }  else if (collides(rightPaddle)) {
         Paddle paddle = *rightPaddle;
         velX = -velX;
-        posX = paddle.posX - posX;
+        posX = 2 * paddle.posX - posX - 2 * RADIUS;
     } else if (posX + RADIUS <= -boundary) 
         reset();
     else if (posX - RADIUS >= boundary)
@@ -149,6 +171,8 @@ void Ball::start(void) {
     // Ball is not moving
     if(!velX && !velY)
         velX = (rand() & 2) - 1; // 50/50 left or right by masking the '2' bit which could have value of 0 or 2
+
+    velX /= 3.f;
 }
 
 void Ball::reset(void) {
@@ -164,17 +188,30 @@ int Ball::collides(Paddle* pPaddle) {
     float distDeltaY = paddleCenY - posY;
     float distDeltaSq = pow(distDeltaX, 2) + pow(distDeltaY, 2);
 
+    //for debugging
+    //make sure to put update before drawing in main loop after taking this out
+    glColor3f(1.0f, 0.f, 0.f);
+    draw_circle(paddleCenX, paddleCenY, paddle.inBoundRad);
+    draw_circle(paddleCenX, paddleCenY, paddle.outBoundRad);
+    glColor3f(1.0f, 1.0f, 1.0f);
+
     // Distance is longer than radius and paddle outer bound
-    if (distDeltaSq > paddle.outBoundRad + RADIUS)
+    if (distDeltaSq > pow(paddle.outBoundRad + RADIUS, 2.f))
         return false;
-    else if (distDeltaSq < paddle.inBoundRad + RADIUS)
+    // Distance is shorter than the radius and paddle inner bound
+    else if (distDeltaSq < pow(paddle.inBoundRad + RADIUS, 2.f))
         return true;
     else {
-        float distDelta = sqrt(distDeltaSq);
+        // TODO: Not complete, closest point to center isnt always closest point to rectangle. Method only works with squares
         // Create a unit vector by dividing components by magnitude of vector
-        // then multiply it by the radius to get the point closest to the paddle
-        float ballClosestPointX = distDeltaX / distDelta * RADIUS;
-        float ballClosestPointY = distDeltaY / distDelta * RADIUS;
+        // then multiply it by the radius and add position to get the point closest to the paddle
+        float distDelta = sqrt(distDeltaSq);
+        float ballClosestPointX = posX + distDeltaX / distDelta * RADIUS;
+        float ballClosestPointY = posY + distDeltaY / distDelta * RADIUS;
+
+        glColor3f(0.f, .7f, 0.f);
+        draw_circle(ballClosestPointX, ballClosestPointY, 0.005);
+        glColor3f(1.0f, 1.0f, 1.0f);
 
         // Check if point is in paddle rectangle
         if(ballClosestPointX > paddle.posX &&
@@ -222,7 +259,7 @@ int main(void) {
         loopTimePrev = loopTimeNow;
 
         if(loopTimeNow >= nextFpsUpdateTime) {
-            std::cout << "FPS: " << 1 / loopTimeDelta << std::endl;
+            std::cout << "FPS: " << 1 / loopTimeDelta << std::endl; // instantaneous fps, not representative of average
             nextFpsUpdateTime = loopTimeNow + 1;
         }
 		
@@ -243,8 +280,9 @@ int main(void) {
         glDisable(GL_DEPTH_TEST);
         glMatrixMode(GL_MODELVIEW);
 		
-        update(loopTimeDelta);
+
         draw(targetDispRatio);
+        update(loopTimeDelta);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
