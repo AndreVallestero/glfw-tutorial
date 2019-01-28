@@ -16,32 +16,16 @@
 #include <ctime>
 #include <iostream>
 
-void draw_circle(float posX, float posY, float radius) {
-    const int DRAW_SEGMENTS = 48;
-    const float TAN_FACT = tanf(6.28318530718f / DRAW_SEGMENTS);
-    const float RAD_FACT = cosf(6.28318530718f / DRAW_SEGMENTS);
-
-    float x = radius, y = 0;
-
-    glBegin(GL_LINE_LOOP);
-    for (int i = 0; i < DRAW_SEGMENTS; ++i) {
-        glVertex2f(posX + x, posY + y);
-		float tx = -y; 
-		float ty = x;
-		x += tx * TAN_FACT; 
-		y += ty * TAN_FACT;
-		x *= RAD_FACT; 
-		y *= RAD_FACT;
-    }
-    glEnd();
-}
+int score_left = 0, score_right = 0;
 
 class Paddle {
     public:
         float width, height = 0.15f;
         float posX, posY = 0 - height / 2;
+        float velY = 0;
         float outBoundRad; // outter bounding radius
         float inBoundRad; // inner bounding radius
+        float curveCoef = 1.f / 4; // How hard to change angle of ball based on how far from center it hit;
 
         void draw(void);
         void update(double);
@@ -66,7 +50,7 @@ Paddle::Paddle(float posXStart, float widthStart, int upKeyId, int downKeyId) {
 }
 
 void Paddle::update(double timeDelta) {
-    posY += (moveUpKeyState - moveDownKeyState) * speed * timeDelta;
+    posY += velY * timeDelta;
     if(posY > 1 - height) posY = 1 - height;
     else if (posY < -1) posY = -1;
 }
@@ -90,13 +74,16 @@ int Paddle::key_handler(int key, int action) {
         moveDownKeyState = true;
     else if (key == downKey && action == GLFW_RELEASE)
         moveDownKeyState = false;
-    else 
+    else
         return false;
+    velY = (moveUpKeyState - moveDownKeyState) * speed;
     return true;
 }
 
 class Ball {
     public:
+        float velX = 0, velY = 0;
+
         void draw(void);
         void update(double, Paddle*, Paddle*);
         void start(void);
@@ -117,7 +104,6 @@ class Ball {
         const float RAD_FACT = cosf(6.28318530718f / DRAW_SEGMENTS);
 
         float posX = 0, posY = 0;
-        float velX = 0, velY = 0;
         
         float boundary;
 };
@@ -130,24 +116,44 @@ void Ball::update(double timeDelta, Paddle* leftPaddle, Paddle* rightPaddle) {
     posX += velX * timeDelta;
     posY += velY * timeDelta;
 
-    if (posY + RADIUS <= -1) {
+    if (posY - RADIUS <= -1) {
         velY = -velY;
-        posY = -2 - posY;
-    } else if (posY - RADIUS >= 1) {
+        posY = -2 - posY + 2 * RADIUS;
+    } else if (posY + RADIUS >= 1) {
         velY = -velY;
-        posY = 2 - posY;
+        posY = 2 - posY - 2 * RADIUS;
     } else if (collides(leftPaddle)) {
         Paddle paddle = *leftPaddle;
-        velX = -velX;
-        posX = 2 * (paddle.posX + paddle.width) - posX + 2 * RADIUS;
+
+        // Position compensation looks bad without proper collision
+        //posX = 2 * (paddle.posX + paddle.width) - posX + 2 * RADIUS;
+        posX -= velX * timeDelta;
+        velX = -velX + START_SPEED / 10;
+
+        float paddleCenY = paddle.posY + paddle.height / 2;
+        float distY = posY - paddleCenY;
+        float curveMulti = distY / paddle.height;
+        velY += paddle.velY / 4 + curveMulti * paddle.curveCoef;
     }  else if (collides(rightPaddle)) {
         Paddle paddle = *rightPaddle;
-        velX = -velX;
-        posX = 2 * paddle.posX - posX - 2 * RADIUS;
-    } else if (posX + RADIUS <= -boundary) 
+
+
+        // Proper position compensation looks bad without proper collision
+        //posX = 2 * paddle.posX - posX - 2 * RADIUS;
+        posX -= velX * timeDelta;
+        velX = -velX - START_SPEED / 10;
+
+        float paddleCenY = paddle.posY + paddle.height / 2;
+        float distY = posY - paddleCenY;
+        float curveMulti = distY / paddle.height;
+        velY += paddle.velY / 4 + curveMulti * paddle.curveCoef;
+    } else if (posX + RADIUS <= -boundary) {
+        ++score_left;
         reset();
-    else if (posX - RADIUS >= boundary)
+    } else if (posX - RADIUS >= boundary) {
+        ++score_right;
         reset();
+    }
 }
 
 // Optimized circle from http://slabode.exofire.net/circle_draw.shtml
@@ -170,9 +176,7 @@ void Ball::draw(void) {
 void Ball::start(void) {
     // Ball is not moving
     if(!velX && !velY)
-        velX = (rand() & 2) - 1; // 50/50 left or right by masking the '2' bit which could have value of 0 or 2
-
-    velX /= 3.f;
+        velX = START_SPEED * ((rand() & 2) - 1); // 50/50 left or right by masking the '2' bit which could have value of 0 or 2
 }
 
 void Ball::reset(void) {
@@ -188,30 +192,20 @@ int Ball::collides(Paddle* pPaddle) {
     float distDeltaY = paddleCenY - posY;
     float distDeltaSq = pow(distDeltaX, 2) + pow(distDeltaY, 2);
 
-    //for debugging
-    //make sure to put update before drawing in main loop after taking this out
-    glColor3f(1.0f, 0.f, 0.f);
-    draw_circle(paddleCenX, paddleCenY, paddle.inBoundRad);
-    draw_circle(paddleCenX, paddleCenY, paddle.outBoundRad);
-    glColor3f(1.0f, 1.0f, 1.0f);
-
     // Distance is longer than radius and paddle outer bound
     if (distDeltaSq > pow(paddle.outBoundRad + RADIUS, 2.f))
         return false;
     // Distance is shorter than the radius and paddle inner bound
     else if (distDeltaSq < pow(paddle.inBoundRad + RADIUS, 2.f))
         return true;
+    // Distance is inbetween, check if ball's closest point is in rect
     else {
-        // TODO: Not complete, closest point to center isnt always closest point to rectangle. Method only works with squares
+        // TODO: Not perfect, closest point to center isnt always closest point to rectangle. Method only perfect for squares
         // Create a unit vector by dividing components by magnitude of vector
         // then multiply it by the radius and add position to get the point closest to the paddle
         float distDelta = sqrt(distDeltaSq);
         float ballClosestPointX = posX + distDeltaX / distDelta * RADIUS;
         float ballClosestPointY = posY + distDeltaY / distDelta * RADIUS;
-
-        glColor3f(0.f, .7f, 0.f);
-        draw_circle(ballClosestPointX, ballClosestPointY, 0.005);
-        glColor3f(1.0f, 1.0f, 1.0f);
 
         // Check if point is in paddle rectangle
         if(ballClosestPointX > paddle.posX &&
@@ -223,6 +217,7 @@ int Ball::collides(Paddle* pPaddle) {
     return false;
 }
 
+void update_title(GLFWwindow*, double);
 void update(double);
 void draw(float);
 void reset(void);
@@ -243,7 +238,6 @@ int main(void) {
 
     float targetDispRatio = 4/3.f;
 	int width, height;
-    int score_left = 0, score_right = 0;
     double loopTimePrev = glfwGetTime();
 
     float paddleWidth = 0.02f;
@@ -259,7 +253,7 @@ int main(void) {
         loopTimePrev = loopTimeNow;
 
         if(loopTimeNow >= nextFpsUpdateTime) {
-            std::cout << "FPS: " << 1 / loopTimeDelta << std::endl; // instantaneous fps, not representative of average
+            update_title(window, loopTimeDelta);
             nextFpsUpdateTime = loopTimeNow + 1;
         }
 		
@@ -279,10 +273,9 @@ int main(void) {
         
         glDisable(GL_DEPTH_TEST);
         glMatrixMode(GL_MODELVIEW);
-		
 
-        draw(targetDispRatio);
         update(loopTimeDelta);
+        draw(targetDispRatio);
 
         glfwSwapBuffers(window);
         glfwPollEvents();
@@ -291,6 +284,18 @@ int main(void) {
 	glfwDestroyWindow(window);
 	glfwTerminate();
     return 0;
+}
+
+void update_title(GLFWwindow* window, double deltaTime) {
+    char title [256];
+    title [255] = '\0';
+
+    snprintf(title, 255,
+        "Pong | %d vs %d [FPS: %7.2f]",
+        score_left, score_right, 1 / deltaTime);
+
+    glfwSetWindowTitle(window, title);
+    std::cout << title << std::endl;
 }
 
 void update(double timeDelta) {
@@ -320,6 +325,11 @@ void reset(void) {
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods) {
+    if (key == GLFW_KEY_T && action == GLFW_PRESS) {
+        (*ball).velX /= 2;
+        (*ball).velY /= 2;
+    }
+
     if (key == GLFW_KEY_SPACE && action == GLFW_PRESS)
         (*ball).start();
     else if (key == GLFW_KEY_R && action == GLFW_PRESS)
