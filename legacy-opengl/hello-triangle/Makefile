@@ -14,7 +14,7 @@ ifdef OS
 	LDFLAGS = -lglfw3 -lopengl32 -lgdi32 $(LIBRARIES)
 # Linux
 else
-	LDFLAGS = -lglfw -lGL $(LIBRARIES)
+	LDFLAGS = -lglfw3 -lGL -lXrandr -lX11 -pthread -ldl -lXxf86vm -lXinerama -lXcursor $(LIBRARIES)
 endif
 
 TARGET = hello-triangle

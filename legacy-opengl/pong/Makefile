@@ -14,10 +14,10 @@ ifdef OS
 	LDFLAGS = -lglfw3 -lopengl32 -lgdi32 $(LIBRARIES)
 # Linux
 else
-	LDFLAGS = -lglfw -lGL $(LIBRARIES)
+	LDFLAGS = -lglfw3 -lGL -lXrandr -lX11 -pthread -ldl -lXxf86vm -lXinerama -lXcursor $(LIBRARIES)
 endif
 
-TARGET = hello-triangle
+TARGET = pong
 cpp_files = src/main.cpp
 objects = $(patsubst src/%,build/%,$(cpp_files:.cpp=.o))
 headers = 
