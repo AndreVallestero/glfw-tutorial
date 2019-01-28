@@ -231,7 +231,7 @@ int main(void) {
     srand(time(0));
 
     glfwInit();
-	GLFWwindow* window = glfwCreateWindow(640, 360, "pong", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(640, 480, "pong", NULL, NULL);
 	glfwMakeContextCurrent(window);
     glClearColor(0.5f, 0.5f, 0.5f, 1.0f);
     glfwSetKeyCallback(window, key_callback);
