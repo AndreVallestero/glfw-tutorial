@@ -8,13 +8,14 @@ INCLUDES = -I$(dep_path)/include
 LIBRARIES = -L$(dep_path)/lib
 
 CPPFLAGS = -Wall -ggdb3 -Og $(INCLUDES)
+LDFLAGS = -static-libgcc -static-libstdc++ -lglfw3 $(LIBRARIES)
 
 # Windows
 ifdef OS
-	LDFLAGS = -lglfw3 -lopengl32 -lgdi32 -static-libgcc -static-libstdc++ $(LIBRARIES)
+	LDFLAGS += -lopengl32 -lgdi32
 # Linux
 else
-	LDFLAGS = -lglfw3 -lGL -lXrandr -lX11 -pthread -ldl -lXxf86vm -lXinerama -lXcursor -static-libgcc -static-libstdc++ $(LIBRARIES)
+	LDFLAGS += -lGL -lXrandr -lX11 -pthread -ldl -lXxf86vm -lXinerama -lXcursor
 endif
 
 TARGET = pong
