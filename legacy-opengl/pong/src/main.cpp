@@ -148,10 +148,10 @@ void Ball::update(double timeDelta, Paddle* leftPaddle, Paddle* rightPaddle) {
         float curveMulti = distY / paddle.height;
         velY += paddle.velY / 4 + curveMulti * paddle.curveCoef;
     } else if (posX + RADIUS <= -boundary) {
-        ++score_left;
+        ++score_right;
         reset();
     } else if (posX - RADIUS >= boundary) {
-        ++score_right;
+        ++score_left;
         reset();
     }
 }
