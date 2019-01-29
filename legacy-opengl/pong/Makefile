@@ -11,10 +11,10 @@ CPPFLAGS = -Wall -ggdb3 -Og $(INCLUDES)
 
 # Windows
 ifdef OS
-	LDFLAGS = -lglfw3 -lopengl32 -lgdi32 $(LIBRARIES)
+	LDFLAGS = -lglfw3 -lopengl32 -lgdi32 -static-libgcc -static-libstdc++ $(LIBRARIES)
 # Linux
 else
-	LDFLAGS = -lglfw3 -lGL -lXrandr -lX11 -pthread -ldl -lXxf86vm -lXinerama -lXcursor $(LIBRARIES)
+	LDFLAGS = -lglfw3 -lGL -lXrandr -lX11 -pthread -ldl -lXxf86vm -lXinerama -lXcursor -static-libgcc -static-libstdc++ $(LIBRARIES)
 endif
 
 TARGET = pong
